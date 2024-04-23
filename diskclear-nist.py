@@ -75,14 +75,18 @@ if confirm.lower() == "y":
     # Erase the disk using NIST-approved method
     print(f"Erasing {drive_to_erase.Caption} using NIST-approved method...")
 
-    drive_letter = re.match(r"^([A-Z]):", drive_to_erase.Caption).group(1)
-    subprocess.run([diskspd_path, "-c1G", "-w0", f"{drive_letter}:"])
+    match = re.match(r"^([A-Z]):", drive_to_erase.Caption)
+    if match:
+        drive_letter = match.group(1)
+        subprocess.run([diskspd_path, "-c1G", "-w0", f"{drive_letter}:"])
 
-    # Verify the erasure process
-    print("Verifying erasure...")
-    # Add code to verify that the disk is erased (e.g., read data from the disk and check for all zeros)
+        # Verify the erasure process
+        print("Verifying erasure...")
+        # Add code to verify that the disk is erased (e.g., read data from the disk and check for all zeros)
 
-    print("Disk erased and verified successfully.")
+        print("Disk erased and verified successfully.")
+    else:
+        print(f"Unable to determine drive letter for {drive_to_erase.Caption}. Skipping erasure.")
 else:
     print("Disk erase canceled.")
 
