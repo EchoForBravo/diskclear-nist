@@ -1,7 +1,6 @@
 import sys
 import subprocess
 import wmi
-import re
 import os
 import shutil
 import zipfile
@@ -17,24 +16,24 @@ def install_wmi():
         subprocess.check_call([sys.executable, "-m", "pip", "install", "wmi"])
         print("Installation complete.")
 
-# Function to install the DiskSpd utility
-def install_diskspd():
-    diskspd_url = "https://github.com/microsoft/diskspd/releases/download/v2.1/DiskSpd.ZIP"
-    diskspd_zip = "DiskSpd-2.0.21a.zip"
-    diskspd_dir = "DiskSpd-2.0.21a"
+# Function to download and extract DBAN
+def download_dban():
+    dban_url = "https://sourceforge.net/projects/dban/files/latest/download"
+    dban_zip = "dban-2.3.0.zip"
+    dban_dir = "dban-2.3.0"
 
     try:
-        print("Downloading DiskSpd utility...")
-        temp_file, _ = urlretrieve(diskspd_url, diskspd_zip)
+        print("Downloading DBAN utility...")
+        temp_file, _ = urlretrieve(dban_url, dban_zip)
 
-        print("Extracting DiskSpd utility...")
-        with zipfile.ZipFile(diskspd_zip, 'r') as zip_ref:
+        print("Extracting DBAN utility...")
+        with zipfile.ZipFile(dban_zip, 'r') as zip_ref:
             zip_ref.extractall()
 
-        diskspd_path = os.path.join(os.getcwd(), diskspd_dir, "DiskSpd.exe")
-        return diskspd_path
+        dban_path = os.path.join(os.getcwd(), dban_dir, "dban.iso")
+        return dban_path
     except Exception as e:
-        print(f"Error installing DiskSpd utility: {e}")
+        print(f"Error downloading DBAN utility: {e}")
         return None
     finally:
         if os.path.exists(temp_file):
@@ -42,15 +41,6 @@ def install_diskspd():
 
 # Install the wmi module
 install_wmi()
-
-# Install the DiskSpd utility if not present
-diskspd_path = shutil.which("DiskSpd.exe")
-if not diskspd_path:
-    diskspd_path = install_diskspd()
-    if not diskspd_path:
-        print("Unable to install DiskSpd utility. Exiting...")
-        input("Press Enter to exit...")
-        sys.exit(1)
 
 # Connect to the WMI service
 c = wmi.WMI()
@@ -72,35 +62,28 @@ drive_to_erase = drives[selected_drive - 1]
 # Confirm with the user
 confirm = input(f"Are you sure you want to erase {drive_to_erase.Caption}? (y/n) ")
 if confirm.lower() == "y":
-    # Erase the disk using NIST-approved method
-    print(f"Erasing {drive_to_erase.Caption} using NIST-approved method...")
+    # Download and extract DBAN
+    dban_path = download_dban()
+    if not dban_path:
+        print("Unable to download DBAN utility. Exiting...")
+        input("Press Enter to exit...")
+        sys.exit(1)
+
+    print(f"DBAN utility downloaded and extracted: {dban_path}")
 
     # Check if the drive is a USB drive or removable media
     if "USB" in drive_to_erase.Caption or "Removable" in drive_to_erase.Caption:
-        # Handle USB drives or removable media differently
         print("USB drive or removable media detected.")
-        drive_letter = input("Please enter the drive letter (e.g., E:): ")
-        subprocess.run([diskspd_path, "-c1G", "-w0", f"{drive_letter}"])
-
-        # Verify the erasure process
-        print("Verifying erasure...")
-        # Add code to verify that the disk is erased (e.g., read data from the disk and check for all zeros)
-
-        print("Disk erased and verified successfully.")
+        print("Please follow these steps to erase the drive using DBAN:")
+        print("1. Create a bootable USB drive or CD/DVD using the DBAN ISO file.")
+        print("2. Boot from the DBAN media and follow the on-screen instructions to erase the drive.")
     else:
-        # Handle internal drives
-        match = re.match(r"^([A-Z]):", drive_to_erase.Caption)
-        if match:
-            drive_letter = match.group(1)
-            subprocess.run([diskspd_path, "-c1G", "-w0", f"{drive_letter}:"])
+        print("Internal drive detected.")
+        print("Please follow these steps to erase the drive using DBAN:")
+        print("1. Create a bootable USB drive or CD/DVD using the DBAN ISO file.")
+        print("2. Boot from the DBAN media and follow the on-screen instructions to erase the drive.")
 
-            # Verify the erasure process
-            print("Verifying erasure...")
-            # Add code to verify that the disk is erased (e.g., read data from the disk and check for all zeros)
-
-            print("Disk erased and verified successfully.")
-        else:
-            print(f"Unable to determine drive letter for {drive_to_erase.Caption}. Skipping erasure.")
+    input("Press Enter to exit...")
 else:
     print("Disk erase canceled.")
 
